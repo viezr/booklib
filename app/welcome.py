@@ -90,7 +90,7 @@ class Welcome(tk.Toplevel):
             "lib_books": books_path,
             "lib_covers": covers_path,
             "lib_thumbs": thumbs_path,
-            "style_color": 0,
+            "style_color": 1,
             "default_view": 1,
             "columns_show": [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
         }
