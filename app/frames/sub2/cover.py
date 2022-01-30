@@ -17,7 +17,7 @@ class Cover(tk.Toplevel):
 
         self.root, self.container = root, container
         tk.Toplevel.__init__(self, self.container)
-        self.title(" - ".join([self.root.wtitle, "Processing..."]))
+        self.title(" - ".join([config.app_title, "Processing..."]))
         self._im_size = (600, 800)
         self._set_position()
         self.attributes('-topmost', 'true')

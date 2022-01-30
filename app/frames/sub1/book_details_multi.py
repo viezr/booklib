@@ -4,7 +4,7 @@ Book details frame.
 import tkinter as tk
 from tkinter import ttk
 
-from app import state
+from app import config, state
 
 
 class BookDetailsMulti(tk.Toplevel):
@@ -14,7 +14,7 @@ class BookDetailsMulti(tk.Toplevel):
     def __init__(self, root: object, container: object):
         self.root, self.container = root, container
         tk.Toplevel.__init__(self, self.container)
-        self.title(" - ".join([self.root.wtitle, "Multiple edit"]))
+        self.title(" - ".join([config.app_title, "Multiple edit"]))
         self.root.center_child(self, (448, 240))
         self.attributes('-topmost', 'true')
         if state.platform != "win32":

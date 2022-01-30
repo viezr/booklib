@@ -9,6 +9,7 @@ from secrets import token_hex
 from PIL import Image, ImageTk
 
 from app import config, state
+from app.models import BookFile
 from app.modules.clean_translit import clean_with_underscore, clean_with_space
 from app.modules.clean_translit import chars_to_ascii
 from app.modules.mupdf import get_book_info, get_cover_img, convert_to_pdf
@@ -24,12 +25,11 @@ class FilesInterface():
         self._tmp_prefix: str = "booklib_" # prefix for temp directories
 
     @staticmethod
-    def convert_book(file: str, ext: str, out_path: str) -> None:
+    def convert_book_to(file: str, out_path: str) -> None:
         '''
         Convert book and save to given path.
         '''
-        if ext == "pdf":
-            convert_to_pdf(file, out_path)
+        convert_to_pdf(file, out_path)
 
     @staticmethod
     def copy_book_to(file: str, out_path: str, out_file: str) -> None:
@@ -51,11 +51,11 @@ class FilesInterface():
                 shutil.rmtree(dir_.path, ignore_errors=True)
 
     @staticmethod
-    def change_cover_file(src_file: str, book_file: str) -> None:
+    def change_cover_file(src_file: str, book_file_name: str) -> None:
         '''
         Change book cover image
         '''
-        _copy_cover_file(src_file, book_file, wait=True)
+        _copy_cover_file(src_file, book_file_name)
 
     def clean_lib_files(self, db_files: list) -> None:
         '''
@@ -71,42 +71,44 @@ class FilesInterface():
                 if not file.name in db_files or size == 0:
                     os_remove(file.path)
 
-    def parse_file(self, src_file: str) -> [tuple, None]:
+    def get_book_file_data(self, src_file: str) -> [object, None]:
         '''
-        Parse files for covers, metadata.
-        Translit cyrillic symbols to ASCII, clean files names.
+        Parse files for metadata, return book file object.
         '''
         src_file = os.path.normpath(src_file)
+        file_name = os.path.split(src_file)[1]
+
         # Uncompress fb2.zip
         if src_file.endswith(".fb2.zip"):
             tmp_file = unzip_fb2(src_file, prefix=self._tmp_prefix)
-            if not tmp_file:
-                return None
             src_file = tmp_file if tmp_file else src_file
 
         # Get book info from meta data
-        meta_title = meta_authors = meta_date = pages = None
+        meta_title = meta_authors = date = None
+        pages = 0
         if any(src_file.endswith(x) for x in (".pdf", ".epub", ".fb2")):
-            meta_title, meta_authors, meta_date, pages = get_book_info(src_file)
+            meta_title, meta_authors, date, pages = get_book_info(src_file)
         # Get book info from file name
-        file_name = os.path.split(src_file)[1]
-        file_title, file_authors = self._get_info_from_file(file_name)
-        # authors should be list of authors [[name1, name2],...]
-        title = meta_title if meta_title else file_title
-        authors = meta_authors if meta_authors else file_authors
-        date_ = meta_date
+        if not all([meta_title, meta_authors]):
+            file_title, file_authors = self._get_info_from_file(file_name)
 
-        new_file_name = chars_to_ascii(clean_with_underscore(file_name)).lower()
-        new_book_file = self._check_file_name(new_file_name)
-        new_cover_file = ''.join([os.path.splitext(new_book_file)[0], ".png" ])
+        book_filename = self._check_rename_filename(file_name)
+        cover_filename = ''.join([os.path.splitext(book_filename)[0], ".png" ])
 
-        return (title, authors, date_, pages, new_book_file, new_cover_file)
+        book_file = BookFile(src_file, date, pages)
+        book_file.title = meta_title if meta_title else file_title
+        book_file.authors = meta_authors if meta_authors else file_authors
+        book_file.book_file_name = book_filename
+        book_file.cover_file_name = cover_filename
+
+        return book_file
 
     @staticmethod
     def _get_info_from_file(file_name: str) -> list:
         '''
         Get book info from file name.
         '''
+        # authors should be list of authors [[name1, name2],...]
         file_title = None
         title_author = os.path.splitext(file_name)[0]
         if "-" in title_author:
@@ -122,39 +124,40 @@ class FilesInterface():
             file_authors = [["Unknown", "Unknown"],] # make list
         return (file_title, file_authors)
 
-    def copy_book_files(self, src_file: str, new_book_file: str,
-        new_cover_file: str) -> None:
+    def _check_rename_filename(self, file_name: str) -> str:
         '''
-        Copy book file, cover, and created thumbnail to library
+        If same file exists in library, add suffix and return new name.
         '''
-        self._copy_book_file(src_file, new_book_file)
+        file_name = chars_to_ascii(clean_with_underscore(file_name)).lower()
+        dst_file = os.path.join(self._settings["lib_books"], file_name)
+        if os.path.exists(dst_file):
+            file, ext = os.path.splitext(file_name)
+            file_name = ''.join([file, "_",token_hex(4), ext])
+        return file_name
+
+    def copy_book_files(self, book_file: object) -> None:
+        '''
+        Copy book file and cover to library
+        '''
+        self._copy_book_file(book_file)
         # Get cover from book file
         cover_tmp = get_cover_img(
-            src_file, max_size=config.max_cover_size, prefix=self._tmp_prefix)
+            book_file.src_file, max_size=config.max_cover_size,
+            prefix=self._tmp_prefix)
         # Copy cover file and make thumbnail
-        self._copy_cover_file(cover_tmp, new_cover_file)
+        self._copy_cover_file(cover_tmp, book_file.cover_file_name)
 
-    def _check_file_name(self, new_file_name: str) -> str:
+    def _copy_book_file(self, book_file: object) -> None:
         '''
-        If same file exists in library, add suffix and return new name
+        Copy book files to library.
         '''
-        dst_file = os.path.join(self._settings["lib_books"], new_file_name)
-        if os.path.exists(dst_file):
-            file, ext = os.path.splitext(new_file_name)
-            new_file_name = ''.join([file, "_",token_hex(4), ext])
-        return new_file_name
+        dst_file = os.path.join(self._settings["lib_books"],
+            book_file.book_file_name)
+        shutil.copy2(book_file.src_file, dst_file)
 
-    def _copy_book_file(self, src_file: str, new_book_file: str) -> None:
+    def _copy_cover_file(self, src_file: str, new_cover_file: str) -> None:
         '''
-        Copy book files to library
-        '''
-        dst_file = os.path.join(self._settings["lib_books"], new_book_file)
-        shutil.copy2(src_file, dst_file)
-
-    def _copy_cover_file(self, src_file: str,
-        new_cover_file: str, wait: bool = False) -> None:
-        '''
-        Copy cover file to library
+        Copy cover file and created thumbnail to library.
         '''
         if not src_file:
             return
@@ -164,17 +167,10 @@ class FilesInterface():
             if not src_file:
                 return
         dst_cover = os.path.join(self._settings["lib_covers"], new_cover_file)
-        # copy cover
         shutil.copy2(src_file, dst_cover)
-        # Make thumbnail
-        th = Thread(target=self._make_thumbnail,
-            args=(src_file, new_cover_file))
-        th.start()
-        if wait: # Used to wait thumbnail then changing book cover
-            th.join()
+        self._make_thumbnail(src_file, new_cover_file)
 
-    @staticmethod
-    def _convert_cover(src_file: str) -> str:
+    def _convert_cover(self, src_file: str) -> str:
         '''
         Convert covers to png format
         '''

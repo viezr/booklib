@@ -7,17 +7,16 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
 
-from .config import Style
+from app import config, Style
 
 
 class Welcome(tk.Toplevel):
     '''
     First run frame class.
     '''
-    def __init__(self, config_file: str, platform: str):
+    def __init__(self, settings_file: str, platform: str):
         tk.Toplevel.__init__(self)
-        self._wtitle="Booklib - Welcome"
-        self.title(self._wtitle)
+        self.title(' - '.join([config.app_title, "Welcome"]))
         self._set_geometry()
         if platform != "win32":
             self.attributes('-type', 'dialog')
@@ -27,7 +26,7 @@ class Welcome(tk.Toplevel):
 
         self._lib_folder_label = None
         self._lib_default = path.expanduser("~/Booklib")
-        self._settings_file = config_file
+        self._settings_file = settings_file
         self._settings = {}
 
         self._fill()
@@ -91,7 +90,7 @@ class Welcome(tk.Toplevel):
             "lib_covers": covers_path,
             "lib_thumbs": thumbs_path,
             "style_color": 1,
-            "default_view": 1,
+            "default_view": 0,
             "columns_show": [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
         }
         with open(self._settings_file, "w", encoding="utf-8") as file:

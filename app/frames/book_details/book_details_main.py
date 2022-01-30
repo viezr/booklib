@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
 
-from app import state
+from app import config, state
 from app.frames.sub2 import Preview
 from .book_details_left import BookDetailsLeft
 
@@ -18,7 +18,7 @@ class BookDetails(tk.Toplevel):
     def __init__(self, root: object, container: object):
         self.root, self.container = root, container
         tk.Toplevel.__init__(self, self.container)
-        self.title(" - ".join([self.root.wtitle, "Book details"]))
+        self.title(" - ".join([config.app_title, "Book details"]))
         self.root.center_child(self, (696, 440))
         if state.platform != "win32":
             self.attributes('-type', 'dialog')

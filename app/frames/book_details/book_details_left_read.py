@@ -54,7 +54,7 @@ class BookDetailsLeftRead(tk.Frame):
         self._pages_entry.grid(row=0, column=2, sticky="W")
         self._pages_var.set(self._book.pages)
 
-        ttk.Label(val_frame, text="Pages").grid(
+        ttk.Label(val_frame, text="pages").grid(
             row=0, column=3, padx=24, sticky="W")
 
         self._read_state = ttk.Label(val_frame, style="ReadPerc.TLabel")

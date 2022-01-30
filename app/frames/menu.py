@@ -87,14 +87,11 @@ class Menu(tk.Menu):
         change_wait_progress = self.root.get_wait_progress_func(files_len)
         for idx, src_file in enumerate(files):
             change_wait_progress(idx)
-            # parse file and get book_data as tuple:
-            # (title, authors, date_, pages, book_file, cover_file)
-            book_data = self.root.fd_funcs.parse_file(src_file)
-            if book_data:
-                self.root.db_funcs.add_book(book_data)
+            book_file_obj = self.root.fd_funcs.get_book_file_data(src_file)
+            if book_file_obj:
+                self.root.db_funcs.add_book(book_file_obj)
             if self.root.db_funcs.success:
-                self.root.fd_funcs.copy_book_files(src_file,
-                    book_data[4], book_data[5])
+                self.root.fd_funcs.copy_book_files(book_file_obj)
 
         # Clean temp files
         Thread(target=self.root.fd_funcs.clean_temp, args=()).start()
@@ -142,6 +139,12 @@ class Menu(tk.Menu):
         '''
         Save or export to PDF selected books and books by tag.
         '''
+        def get_attr(book: [dict, object], attr: str) -> str:
+            '''
+            Return book value based on type of book.
+            '''
+            return book[attr] if tag else getattr(book, attr)
+
         if tag:
             ttype = state.sel_tag.tag_type
             tag = getattr(state.sel_tag, '_'.join([ttype, "name"]))
@@ -168,12 +171,12 @@ class Menu(tk.Menu):
         for idx, book in enumerate(books):
             change_wait_progress(idx)
 
-            b_file = book["file"] if tag else book.file
-            b_snum = book["series_num"] if tag else book.series_num
+            b_file = get_attr(book, "file")
             file = os.path.join(state.app_settings["lib_books"], b_file)
             if pdf and not file.endswith(".pdf"):
-                self.root.fd_funcs.convert_book(file, ext="pdf", out_path=folder)
+                self.root.fd_funcs.convert_book_to(file, out_path=folder)
             else:
+                b_snum = get_attr(book, "series_num")
                 out_file = (''.join([str(b_snum).rjust(3, "0"), "_", b_file])
                     if b_snum > 0 else b_file)
                 self.root.fd_funcs.copy_book_to(file, folder, out_file)

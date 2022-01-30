@@ -7,3 +7,4 @@ from .authorship import Authorship
 from .category import Category
 from .series import Series
 from .bookmark import Bookmark
+from .book_file import BookFile

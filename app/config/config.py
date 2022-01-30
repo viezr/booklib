@@ -9,6 +9,7 @@ class Config():
     '''
     Main app config class
     '''
+    app_title = "Booklib"
     db_filename: str = "booklib.db"
     max_cover_size: tuple = (1080, 1920)
     thumb_size: tuple = (192, 256) # thumbnails size

@@ -19,7 +19,7 @@ class Settings(tk.Toplevel):
     def __init__(self, root: object, container: object):
         self.root, self.container = root, container
         tk.Toplevel.__init__(self, self.container)
-        self.title(" - ".join([self.root.wtitle, "Settings"]))
+        self.title(" - ".join([config.app_title, "Settings"]))
         self.root.center_child(self, (360, 400))
         if state.platform != "win32":
             self.attributes('-type', 'dialog')

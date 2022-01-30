@@ -4,7 +4,7 @@ Root window.
 from os import path
 import tkinter as tk
 
-from app import Style, state
+from app import config, Style, state
 from .frames import Menu, TopPanel, Content, Footer, WaitProcess
 from .utils.db_operations import DbaseInterface
 from .utils.files_operations import FilesInterface
@@ -16,9 +16,8 @@ class Booklib(tk.Tk):
     Main GUI class.
     '''
     def __init__(self):
-        self.wtitle = "Booklib"
-        tk.Tk.__init__(self, className=self.wtitle)
-        self.title(self.wtitle)
+        tk.Tk.__init__(self, className=config.app_title)
+        self.title(config.app_title)
         self.minsize(width=600, height=600)
         self.geometry("1200x800")
         self.style = Style(state.app_settings["style_color"], state.platform)
@@ -59,7 +58,8 @@ class Booklib(tk.Tk):
         self.set_footer_text = self.footer_frame.set_text
         self.show_message = self.top_frame.info_frame.show_message
         self.update_side_tags = self.content_frame.side_frame.update_side_tags
-        self.update_side_preview = self.content_frame.side_frame.update_side_preview
+        self.update_side_preview = (
+            self.content_frame.side_frame.update_side_preview)
         self.update_view = self.content_frame.books_frame.update_view
         self.show_wait_frame = self.wait_frame.show
         self.get_wait_progress_func = self.wait_frame.get_progress_func

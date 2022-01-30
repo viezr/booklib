@@ -4,7 +4,7 @@ Menu frame.
 import tkinter as tk
 from tkinter import ttk
 
-from app import state
+from app import config, state
 
 
 class WaitProcess(tk.Toplevel):
@@ -14,7 +14,7 @@ class WaitProcess(tk.Toplevel):
     def __init__(self, root: object, container: object):
         self.root, self.container = root, container
         tk.Toplevel.__init__(self, self.container)
-        self.title(" - ".join([self.root.wtitle, "Processing..."]))
+        self.title(" - ".join([config.app_title, "Processing..."]))
         self.attributes('-topmost', 'true')
         if state.platform != "win32":
             self.attributes('-type', 'dialog')

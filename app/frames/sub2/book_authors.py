@@ -4,7 +4,7 @@ Book authors frame
 import tkinter as tk
 from tkinter import ttk
 
-from app import state
+from app import config, state
 
 
 class BookAuthors(tk.Toplevel):
@@ -14,7 +14,7 @@ class BookAuthors(tk.Toplevel):
     def __init__(self, root: object, container: object):
         self.root, self.container = root, container
         tk.Toplevel.__init__(self, self.container)
-        self.title(" - ".join([self.root.wtitle, "Authors"]))
+        self.title(" - ".join([config.app_title, "Authors"]))
         self.root.center_child(self, (712, 472))
         self.attributes('-topmost', 'true')
         if state.platform != "win32":

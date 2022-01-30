@@ -108,18 +108,19 @@ class DbaseInterface():
             return book[0]
         return None
 
-    def add_book(self, file_data) -> None:
+    def add_book(self, file_data_object) -> None:
         '''
         Add multiple books
         '''
         self._success = False
-        title, authors, date_, pages, book_file, cover_file = file_data
+        bf = file_data_object
         # Add book to database
         time_created = str(dt.datetime.now(dt.timezone.utc))
         try:
-            self._db.insert_model(Book(title=title, pages=pages,
-                time_created=time_created, pub_date=date_,
-                file=book_file, cover=cover_file, category=1))
+            book = Book(title=bf.title, pages=bf.pages, pub_date=bf.pub_date,
+                file=bf.book_file_name, cover=bf.cover_file_name,
+                category=1, time_created=time_created)
+            self._db.insert_model(book)
         except Exception as err:
             self._db.rollback()
             return
@@ -129,7 +130,7 @@ class DbaseInterface():
             self._db.rollback()
             return
         # Add authors and authorships
-        for i in authors:
+        for i in bf.authors:
             author = self.get_author(first_name=i[0], last_name=i[1])
             if not author:
                 self._db.insert_model(Author(first_name=i[0], last_name=i[1]))
