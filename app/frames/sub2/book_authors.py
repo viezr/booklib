@@ -190,8 +190,7 @@ class BookAuthors(tk.Toplevel):
 
     def _new_author(self) -> None:
         '''
-        If author exists set it to authorship for book
-        else add new author and authorship for book.
+        Add new author.
         '''
         flds = self._new_author_fields
         l_name, f_name, p_name = (x[1].get() for x in flds)
@@ -201,11 +200,12 @@ class BookAuthors(tk.Toplevel):
         if not f_name.strip():
             self.root.bad_entry(flds[1][0])
             return
+        p_name = self._check_clear_string(p_name)
 
-        author = self.root.db_funcs.get_author(
+        db_author = self.root.db_funcs.get_author(
             first_name=f_name, last_name=l_name, patronymic=p_name)
-        if author:
-            author_id = author.dbid
+        if db_author:
+            author_id = db_author.dbid
         else:
             self.root.db_funcs.add_author(l_name=l_name, f_name=f_name,
                 p_name=p_name)
@@ -217,24 +217,31 @@ class BookAuthors(tk.Toplevel):
 
     def _upd_author(self, adx: int) -> None:
         '''
-        Update author names
-        adx is the index for author in authors list
+        Update author names.
         '''
         author, auth_fields, authorship = self._authors[int(adx)]
         changes = {}
         for idx, field in enumerate(auth_fields):
             new_value = field[1].get()
-            new_value = None if new_value.lower() == "none" else new_value
+            new_value = self._check_clear_string(new_value)
             changes[self._fields[idx]] = new_value
-        if changes:
-            # Change author if exists
-            db_author = self.root.db_funcs.get_author(**changes)
-            if db_author:
-                self.root.db_funcs.update_item(
-                    authorship, {"author_id": db_author.dbid})
-            else:
-                self.root.db_funcs.update_item(author, changes)
-            self._update_containers()
+        if not changes:
+            return
+        # Change author if exists
+        db_author = self.root.db_funcs.get_author(**changes)
+        if db_author:
+            self.root.db_funcs.update_item(
+                authorship, {"author_id": db_author.dbid})
+        else:
+            self.root.db_funcs.update_item(author, changes)
+        self._update_containers()
+
+    def _check_clear_string(self, value: str) -> [str, None]:
+        '''
+        Replace string with None text to None value, strip string.
+        '''
+        value = None if value.strip().lower() == "none" else value.strip()
+        return value
 
     def _del_author(self, adx: int) -> None:
         '''
