@@ -47,7 +47,7 @@ class BookDetailsLeftPubdate(tk.Frame):
         value = self._pub_date_var.get()
         match = False
         pattern = r'\b[1-2][0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\b'
-        if value in ('', "0"):
+        if value in ('', "0", "None"):
             match = True
         elif fullmatch(pattern, value):
             match = True
