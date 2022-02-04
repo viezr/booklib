@@ -50,12 +50,11 @@ class FilesInterface():
             if dir_.name.startswith(self._tmp_prefix):
                 shutil.rmtree(dir_.path, ignore_errors=True)
 
-    @staticmethod
-    def change_cover_file(src_file: str, book_file_name: str) -> None:
+    def change_cover_file(self, src_file: str, book_file_name: str) -> None:
         '''
         Change book cover image
         '''
-        _copy_cover_file(src_file, book_file_name)
+        self._copy_cover_file(src_file, book_file_name)
 
     def clean_lib_files(self, db_files: list) -> None:
         '''
@@ -163,7 +162,7 @@ class FilesInterface():
             return
         # Convert cover to png if it has other extension
         if os.path.splitext(src_file)[-1] != ".png":
-            src_file = _convert_cover(src_file)
+            src_file = self._convert_cover(src_file)
             if not src_file:
                 return
         dst_cover = os.path.join(self._settings["lib_covers"], new_cover_file)

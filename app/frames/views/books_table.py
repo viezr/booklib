@@ -108,58 +108,62 @@ class BooksTable(tk.Frame):
     def update_view(self, search: tuple = None, request: bool = True) -> None:
         '''
         Get books and update books table. Search sets:
-        (search val, col name), (0, "bookmark"), (0, "duplicates")
+        (search val, column name), (0, "bookmark"), (0, "duplicates")
         '''
         # Request books
         if request:
-            self.root.request_books(search = search)
-
+            self.root.request_books(search=search)
         # Clear books table
         table_children = self._books_table.get_children()
         if table_children:
             self._books_table.delete(*table_children)
-
         if not state.books:
             return
-
-        col_set = config.columns
         # Set showed columns from config
         self._books_table["displaycolumns"] = [
-            x[0] for idx, x in enumerate(col_set)
+            x[0] for idx, x in enumerate(config.columns)
             if state.app_settings["columns_show"][idx] == 1]
-
-        # Fix mess with columns width then hiding columns (reset widths?)
-        for col in config.columns:
-            self._books_table.column(col[0], anchor="w", width=col[2])
-
+        # Set columns width.
+        for (col_name, _, col_width) in config.columns:
+            self._books_table.column(col_name, anchor="w", width=col_width)
         # Fill books table
         for i, book in enumerate(state.books):
-            values_ = []
-            for col_name in book:
-                # Format values for some columns
-                val = book[col_name] if book[col_name] else ""
-                if col_name == "time_created":
-                    val = val[:16] if val else ""
-                elif col_name == "pub_date":
-                    val = val[:4] if val and val != "0" else ""
-                elif col_name == "read_state":
-                    val = self._read_state(val, book["pages"]) if val else ""
-                elif col_name == "bookmark":
-                    val = "*" if val == 1 else ""
-                values_.append(val)
+            row_values = self._create_book_row_values(book)
             self._books_table.insert(parent='', index="end", iid=i, text=i,
-                values=values_, tags=("even" if i % 2 == 0 else "odd",))
+                values=row_values, tags=("even" if i % 2 == 0 else "odd",))
         self._books_table.update()
         self._table_focus()
 
+    def _create_book_row_values(self, book: dict) -> list:
+        '''
+        Create values for book row in table.
+        '''
+        row_values = []
+        for key, val in book.items():
+            val = val if val else ""
+            if key == "time_created":
+                val = val[:16]
+            elif key == "pub_date":
+                val = val[:4] if val != "0" else ""
+            elif key == "read_state":
+                val = self._read_state_percent(val, book["pages"])
+            elif key == "bookmark":
+                val = "*" if val == 1 else ""
+            row_values.append(val)
+        return row_values
+
     @staticmethod
-    def _read_state(page:str, pages:str) -> str:
+    def _read_state_percent(page:str, pages:str) -> str:
+        '''
+        Create read state percent value for book row in table.
+        '''
         text = ""
+        if not all([page, pages]):
+            return text
         page, pages = int(page), int(pages)
         if pages != 0 and page in range(1, pages + 1):
             text = ''.join([str(int(page / (pages / 100))), "%"])
         return text
-
 
     def _get_selection_int(self) -> tuple:
         '''

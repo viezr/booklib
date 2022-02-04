@@ -131,10 +131,10 @@ class BooksShelf(tk.Frame):
 
     def update_view(self, search: tuple = None, cur_page: int = -1) -> None:
         '''
-        Update list of books
-        tag is index of root.category or root.series list objects
+        Get books and update books table. Search sets:
+        (search val, column name), (0, "bookmark"), (0, "duplicates")
         '''
-        # Request books at first run
+        # Request books if no pages
         if cur_page < 0:
             self.root.request_books(search=search)
             cur_page = 0
@@ -155,33 +155,8 @@ class BooksShelf(tk.Frame):
         self._page = cur_page
         self._canvas.yview_moveto(0)
         state.sel_books = state.last_select = None
-        self._table_focus()
         self._show_paging_buttons()
-
-    def _calculate_columns(self, width: [int, None]) -> tuple:
-        '''
-        Calculate columns for covers table.
-        '''
-        hl_border, scroll_w = 3, 6
-        pad = (self._book_pad if self._book_pad
-            else 10 + hl_border + int(scroll_w / 2))
-        self._book_pad = pad
-        cols = width // (config.thumb_size[0] + pad * 2) if width else 3
-        rem = width % (config.thumb_size[0] + pad * 2) if width else 0
-        pad_ext = int(rem / 2) if rem > 0 else 0  # additional padding if reminder
-        return (cols, pad, pad_ext, hl_border)
-
-    def _show_paging_buttons(self) -> None:
-        '''
-        Show paging buttons if more than one page.
-        '''
-        if self._pages > 1:
-            self._buttons_frame.grid()
-        else:
-            self._buttons_frame.grid_remove()
-        # Print pages info between paging buttons
-        self._page_label.configure(text=' '.join(
-            ["Page", str(self._page + 1), "of", str(self._pages)]))
+        self._table_focus()
 
     def _fill_books_page(self, cur_page) -> None:
         '''
@@ -212,16 +187,6 @@ class BooksShelf(tk.Frame):
             self._book_blocks.append(book_block)
             book_block_idx += 1
 
-    def _table_focus(self) -> None:
-        '''
-        Set focus to first book. Wait for parent frame init.
-        '''
-        if hasattr(self.root, "content_frame"):
-            self._select_books()
-            self.focus_set()
-            return
-        self.after(100, self._table_focus)
-
     def _arrange_book_blocks(self, width: int) -> None:
         '''
         Rearrange books blocks after window resizing.
@@ -239,6 +204,41 @@ class BooksShelf(tk.Frame):
                 padx=(pad_ext, pad) if col == 0 else pad, pady=pad)
         self._books_frame.update()
         self._canvas.yview_moveto(0)
+
+    def _calculate_columns(self, width: [int, None]) -> tuple:
+        '''
+        Calculate columns for covers table.
+        '''
+        hl_border, scroll_w = 3, 6
+        pad = (self._book_pad if self._book_pad
+            else 10 + hl_border + int(scroll_w / 2))
+        self._book_pad = pad
+        cols = width // (config.thumb_size[0] + pad * 2) if width else 3
+        rem = width % (config.thumb_size[0] + pad * 2) if width else 0
+        pad_ext = int(rem / 2) if rem > 0 else 0  # additional padding if reminder
+        return (cols, pad, pad_ext, hl_border)
+
+    def _show_paging_buttons(self) -> None:
+        '''
+        Show paging buttons if more than one page.
+        '''
+        if self._pages > 1:
+            self._buttons_frame.grid()
+        else:
+            self._buttons_frame.grid_remove()
+        # Print pages info between paging buttons
+        self._page_label.configure(text=' '.join(
+            ["Page", str(self._page + 1), "of", str(self._pages)]))
+
+    def _table_focus(self) -> None:
+        '''
+        Set focus to first book. Wait for parent frame init.
+        '''
+        if hasattr(self.root, "content_frame"):
+            self._select_books()
+            self.focus_set()
+            return
+        self.after(100, self._table_focus)
 
     def _clear_selected(self, last) -> None:
         '''
